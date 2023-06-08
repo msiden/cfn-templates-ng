@@ -64,9 +64,9 @@ Resources:
       Parameters:
         VPC: !GetAtt VPC.Outputs.VPC
         Cluster: !GetAtt ECS.Outputs.Cluster
-        DesiredCount: 2
+        DesiredCount: 1
         Listener: !GetAtt ALB.Outputs.Listener
-        Path: /products
+        Path: /new_game
 
   WebsiteService:
     Type: AWS::CloudFormation::Stack
@@ -75,7 +75,7 @@ Resources:
       Parameters:
         VPC: !GetAtt VPC.Outputs.VPC
         Cluster: !GetAtt ECS.Outputs.Cluster
-        DesiredCount: 2
+        DesiredCount: 1
         ProductServiceUrl:
           !Join ["/", [!GetAtt ALB.Outputs.LoadBalancerUrl, "products"]]
         Listener: !GetAtt ALB.Outputs.Listener

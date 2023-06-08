@@ -19,7 +19,7 @@ Parameters:
   MaxCount:
     Description: Maximum number of instances of this task we can run across our cluster
     Type: Number
-    Default: 2
+    Default: 1
 
   ProductServiceUrl:
     Description: The URL of the Product Service (used to fetch product information)
@@ -41,7 +41,7 @@ Parameters:
 Resources:
   Service:
     Type: AWS::ECS::Service
-    DependsOn: ListenerRule
+    DependsOn: ListenerRuleRoot
     Properties:
       Cluster: !Ref Cluster
       Role: !Ref ServiceRole
@@ -92,7 +92,7 @@ Resources:
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
 
-  ListenerRule:
+  ListenerRuleRoot:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
     Properties:
       ListenerArn: !Ref Listener
@@ -104,6 +104,20 @@ Resources:
       Actions:
         - TargetGroupArn: !Ref TargetGroup
           Type: forward
+
+  ListenerRuleStatic:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !Ref Listener
+      Priority: 2
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - !Sub ${!Ref Path}static/*
+      Actions:
+        - TargetGroupArn: !Ref TargetGroup
+          Type: forward
+
 
   # This IAM Role grants the service access to register/unregister with the
   # Application Load Balancer (ALB). It is based on the default documented here:

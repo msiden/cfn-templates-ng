@@ -1,5 +1,5 @@
 Description: >
-  This is an example of a long running ECS service that serves a JSON API of products.
+  This is an example of a long running ECS service that serves a JSON API
 
 Parameters:
   VPC:
@@ -59,18 +59,18 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Ref AWS::StackName
-      RetentionInDays: 365
+      RetentionInDays: 30
 
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       VpcId: !Ref VPC
-      Port: 80
+      Port: 8080
       Protocol: HTTP
       Matcher:
         HttpCode: 200-299
       HealthCheckIntervalSeconds: 10
-      HealthCheckPath: /new_game
+      HealthCheckPath: /health_check
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
@@ -79,7 +79,7 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
     Properties:
       ListenerArn: !Ref Listener
-      Priority: 2
+      Priority: 3
       Conditions:
         - Field: path-pattern
           Values:
