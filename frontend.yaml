@@ -41,7 +41,7 @@ Parameters:
 Resources:
   Service:
     Type: AWS::ECS::Service
-    DependsOn: ListenerRuleRoot
+    DependsOn: ListenerRule
     Properties:
       Cluster: !Ref Cluster
       Role: !Ref ServiceRole
@@ -76,7 +76,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Ref AWS::StackName
-      RetentionInDays: 365
+      RetentionInDays: 30
 
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
@@ -92,7 +92,7 @@ Resources:
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
 
-  ListenerRuleRoot:
+  ListenerRule:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
     Properties:
       ListenerArn: !Ref Listener
@@ -101,23 +101,10 @@ Resources:
         - Field: path-pattern
           Values:
             - !Ref Path
+            - "/static/*"
       Actions:
         - TargetGroupArn: !Ref TargetGroup
           Type: forward
-
-  ListenerRuleStatic:
-    Type: AWS::ElasticLoadBalancingV2::ListenerRule
-    Properties:
-      ListenerArn: !Ref Listener
-      Priority: 2
-      Conditions:
-        - Field: path-pattern
-          Values:
-            - !Sub ${!Ref Path}static/*
-      Actions:
-        - TargetGroupArn: !Ref TargetGroup
-          Type: forward
-
 
   # This IAM Role grants the service access to register/unregister with the
   # Application Load Balancer (ALB). It is based on the default documented here:
