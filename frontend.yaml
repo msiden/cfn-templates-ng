@@ -17,8 +17,8 @@ Parameters:
     Type: Number
     Default: 1
 
-  BackendUrl:
-    Description: The URL of the Backend Service
+  GameUrl:
+    Description: The URL of the Game Service
     Type: String
 
   Listener:
@@ -58,8 +58,8 @@ Resources:
           Image: 165718130716.dkr.ecr.eu-north-1.amazonaws.com/numbers_game:latest
           Memory: 128
           Environment:
-            - Name: BACKEND_URL
-              Value: !Ref BackendUrl
+            - Name: GAME_URL
+              Value: !Ref GameUrl
           PortMappings:
             - ContainerPort: 3000
           LogConfiguration:

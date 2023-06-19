@@ -60,7 +60,7 @@ Resources:
         VPC: !GetAtt VPC.Outputs.VPC
         Cluster: !GetAtt ECS.Outputs.Cluster
         DesiredCount: 1
-        BackendUrl:
+        GameUrl:
           !GetAtt ALB.Outputs.LoadBalancerUrl
         Listener: !GetAtt ALB.Outputs.Listener
         Path: /
@@ -75,7 +75,7 @@ Resources:
         ECSAutoScalingGroupName: !GetAtt ECS.Outputs.ECSAutoScalingGroupName
 
 Outputs:
-  BackendUrl:
+  GameUrl:
     Description: The URL endpoint for the product service
     Value: !Join ["", [!GetAtt ALB.Outputs.LoadBalancerUrl, "/"]]
 
