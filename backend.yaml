@@ -1,5 +1,3 @@
-Description: >
-  This is an example of a long running ECS service that serves a JSON API
 
 Parameters:
   VPC:
@@ -13,16 +11,11 @@ Parameters:
   DesiredCount:
     Description: How many instances of this task should we run across our cluster?
     Type: Number
-    Default: 2
+    Default: 1
 
   Listener:
     Description: The Application Load Balancer listener to register with
     Type: String
-
-  Path:
-    Description: The path to register with the Application Load Balancer
-    Type: String
-    Default: /new_game
 
 Resources:
   Service:
@@ -59,7 +52,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Ref AWS::StackName
-      RetentionInDays: 30
+      RetentionInDays: 3
 
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
@@ -83,7 +76,8 @@ Resources:
       Conditions:
         - Field: path-pattern
           Values:
-            - !Ref Path
+            - "/new_game"
+            - "/submit_guess/*"
       Actions:
         - TargetGroupArn: !Ref TargetGroup
           Type: forward
