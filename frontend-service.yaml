@@ -17,10 +17,6 @@ Parameters:
     Type: Number
     Default: 1
 
-  # GameUrl:
-  #   Description: The URL of the Game Service
-  #   Type: String
-
   Listener:
     Description: The Application Load Balancer listener to register with
     Type: String
@@ -57,9 +53,6 @@ Resources:
           Essential: true
           Image: 165718130716.dkr.ecr.eu-north-1.amazonaws.com/ng-frontend-service:latest
           Memory: 128
-          # Environment:
-          #   - Name: GAME_URL
-          #     Value: !Ref GameUrl
           PortMappings:
             - ContainerPort: 3000
           LogConfiguration:
