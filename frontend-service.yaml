@@ -1,4 +1,3 @@
-
 Parameters:
   VPC:
     Description: The VPC that the ECS cluster is deployed to
@@ -13,8 +12,22 @@ Parameters:
     Type: Number
     Default: 1
 
+  MaxCount:
+    Description: Maximum number of instances of this task we can run across our cluster
+    Type: Number
+    Default: 1
+
   Listener:
     Description: The Application Load Balancer listener to register with
+    Type: String
+
+  Path:
+    Description: The path to register with the Application Load Balancer
+    Type: String
+    Default: /
+
+  ECSServiceAutoScalingRoleARN:
+    Description: The ECS service auto scaling role ARN
     Type: String
 
 Resources:
@@ -27,21 +40,21 @@ Resources:
       DesiredCount: !Ref DesiredCount
       TaskDefinition: !Ref TaskDefinition
       LoadBalancers:
-        - ContainerName: "product-service"
-          ContainerPort: 8080
+        - ContainerName: "frontend-service"
+          ContainerPort: 3000
           TargetGroupArn: !Ref TargetGroup
 
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
-      Family: product-service
+      Family: frontend-service
       ContainerDefinitions:
-        - Name: product-service
+        - Name: frontend-service
           Essential: true
-          Image: 165718130716.dkr.ecr.eu-north-1.amazonaws.com/numbers_game_backend:latest
+          Image: 165718130716.dkr.ecr.eu-north-1.amazonaws.com/ng-frontend-service:latest
           Memory: 128
           PortMappings:
-            - ContainerPort: 8080
+            - ContainerPort: 3000
           LogConfiguration:
             LogDriver: awslogs
             Options:
@@ -52,18 +65,18 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Ref AWS::StackName
-      RetentionInDays: 3
+      RetentionInDays: 30
 
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       VpcId: !Ref VPC
-      Port: 8080
+      Port: 80
       Protocol: HTTP
       Matcher:
         HttpCode: 200-299
       HealthCheckIntervalSeconds: 10
-      HealthCheckPath: /health_check
+      HealthCheckPath: /
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
@@ -72,12 +85,13 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
     Properties:
       ListenerArn: !Ref Listener
-      Priority: 2
+      Priority: 1
       Conditions:
         - Field: path-pattern
           Values:
-            - "/new_game"
-            - "/submit_guess/*"
+            - !Ref Path
+            - "/static/*"
+            - "/favicon.ico"
       Actions:
         - TargetGroupArn: !Ref TargetGroup
           Type: forward
@@ -123,3 +137,85 @@ Resources:
                   }
                 ]
             }
+
+  ServiceScalableTarget:
+    Type: "AWS::ApplicationAutoScaling::ScalableTarget"
+    Properties:
+      MaxCapacity: !Ref MaxCount
+      MinCapacity: !Ref DesiredCount
+      ResourceId: !Join
+        - /
+        - - service
+          - !Ref Cluster
+          - !GetAtt Service.Name
+      RoleARN: !Ref ECSServiceAutoScalingRoleARN
+      ScalableDimension: ecs:service:DesiredCount
+      ServiceNamespace: ecs
+
+  ServiceScaleOutPolicy:
+    Type: "AWS::ApplicationAutoScaling::ScalingPolicy"
+    Properties:
+      PolicyName: ServiceScaleOutPolicy
+      PolicyType: StepScaling
+      ScalingTargetId: !Ref ServiceScalableTarget
+      StepScalingPolicyConfiguration:
+        AdjustmentType: ChangeInCapacity
+        Cooldown: 1800
+        MetricAggregationType: Average
+        StepAdjustments:
+          - MetricIntervalLowerBound: 0
+            ScalingAdjustment: 1
+
+  ServiceScaleInPolicy:
+    Type: "AWS::ApplicationAutoScaling::ScalingPolicy"
+    Properties:
+      PolicyName: ServiceScaleInPolicy
+      PolicyType: StepScaling
+      ScalingTargetId: !Ref ServiceScalableTarget
+      StepScalingPolicyConfiguration:
+        AdjustmentType: ChangeInCapacity
+        Cooldown: 1800
+        MetricAggregationType: Average
+        StepAdjustments:
+          - MetricIntervalUpperBound: 0
+            ScalingAdjustment: -1
+
+  CPUScaleOutAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: CPU utilization greater than 90%
+      AlarmDescription: Alarm if cpu utilization greater than 90% of reserved cpu
+      Namespace: AWS/ECS
+      MetricName: CPUUtilization
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref Cluster
+        - Name: ServiceName
+          Value: !GetAtt Service.Name
+      Statistic: Maximum
+      Period: "60"
+      EvaluationPeriods: "3"
+      Threshold: "90"
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref ServiceScaleOutPolicy
+
+  CPUScaleInAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: CPU utilization less than 70%
+      AlarmDescription: Alarm if cpu utilization greater than 70% of reserved cpu
+      Namespace: AWS/ECS
+      MetricName: CPUUtilization
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref Cluster
+        - Name: ServiceName
+          Value: !GetAtt Service.Name
+      Statistic: Maximum
+      Period: "60"
+      EvaluationPeriods: "10"
+      Threshold: "70"
+      ComparisonOperator: LessThanThreshold
+      AlarmActions:
+        - !Ref ServiceScaleInPolicy

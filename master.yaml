@@ -42,25 +42,24 @@ Resources:
         SecurityGroup: !GetAtt SecurityGroups.Outputs.ECSHostSecurityGroup
         Subnets: !GetAtt VPC.Outputs.PrivateSubnets
 
-  ProductService:
+  GameService:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://cfn-template-ng.s3.eu-north-1.amazonaws.com/backend.yaml
+      TemplateURL: https://cfn-template-ng.s3.eu-north-1.amazonaws.com/game-service.yaml
       Parameters:
         VPC: !GetAtt VPC.Outputs.VPC
         Cluster: !GetAtt ECS.Outputs.Cluster
         DesiredCount: 1
         Listener: !GetAtt ALB.Outputs.Listener
 
-  WebsiteService:
+  FrontendService:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://cfn-template-ng.s3.eu-north-1.amazonaws.com/frontend.yaml
+      TemplateURL: https://cfn-template-ng.s3.eu-north-1.amazonaws.com/frontend-service.yaml
       Parameters:
         VPC: !GetAtt VPC.Outputs.VPC
         Cluster: !GetAtt ECS.Outputs.Cluster
         DesiredCount: 1
-        GameUrl: !GetAtt ALB.Outputs.LoadBalancerUrl
         Listener: !GetAtt ALB.Outputs.Listener
         Path: /
         ECSServiceAutoScalingRoleARN: !GetAtt ECS.Outputs.ECSServiceAutoScalingRole
@@ -72,12 +71,3 @@ Resources:
       Parameters:
         Cluster: !GetAtt ECS.Outputs.Cluster
         ECSAutoScalingGroupName: !GetAtt ECS.Outputs.ECSAutoScalingGroupName
-
-Outputs:
-  GameUrl:
-    Description: The URL endpoint for the game service
-    Value: !Join ["", [!GetAtt ALB.Outputs.LoadBalancerUrl, "/"]]
-
-  WebsiteServiceUrl:
-    Description: The URL endpoint for the website service
-    Value: !Join ["", [!GetAtt ALB.Outputs.LoadBalancerUrl, "/"]]

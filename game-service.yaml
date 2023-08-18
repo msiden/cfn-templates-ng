@@ -1,0 +1,125 @@
+
+Parameters:
+  VPC:
+    Description: The VPC that the ECS cluster is deployed to
+    Type: AWS::EC2::VPC::Id
+
+  Cluster:
+    Description: Please provide the ECS Cluster ID that this service should run on
+    Type: String
+
+  DesiredCount:
+    Description: How many instances of this task should we run across our cluster?
+    Type: Number
+    Default: 1
+
+  Listener:
+    Description: The Application Load Balancer listener to register with
+    Type: String
+
+Resources:
+  Service:
+    Type: AWS::ECS::Service
+    DependsOn: ListenerRule
+    Properties:
+      Cluster: !Ref Cluster
+      Role: !Ref ServiceRole
+      DesiredCount: !Ref DesiredCount
+      TaskDefinition: !Ref TaskDefinition
+      LoadBalancers:
+        - ContainerName: "game-service"
+          ContainerPort: 8080
+          TargetGroupArn: !Ref TargetGroup
+
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: game-service
+      ContainerDefinitions:
+        - Name: game-service
+          Essential: true
+          Image: 165718130716.dkr.ecr.eu-north-1.amazonaws.com/ng-game-service:latest
+          Memory: 128
+          PortMappings:
+            - ContainerPort: 8080
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref CloudWatchLogsGroup
+              awslogs-region: !Ref AWS::Region
+
+  CloudWatchLogsGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Ref AWS::StackName
+      RetentionInDays: 3
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref VPC
+      Port: 8080
+      Protocol: HTTP
+      Matcher:
+        HttpCode: 200-299
+      HealthCheckIntervalSeconds: 10
+      HealthCheckPath: /health_check
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+
+  ListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !Ref Listener
+      Priority: 2
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - "/new_game"
+            - "/submit_guess/*"
+      Actions:
+        - TargetGroupArn: !Ref TargetGroup
+          Type: forward
+
+  # This IAM Role grants the service access to register/unregister with the
+  # Application Load Balancer (ALB). It is based on the default documented here:
+  # http://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_IAM_role.html
+  ServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ecs-service-${AWS::StackName}
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+            "Statement": [{
+                "Effect": "Allow",
+                "Principal": { "Service": [ "ecs.amazonaws.com" ]},
+                "Action": [ "sts:AssumeRole" ]
+            }]
+        }
+      Policies:
+        - PolicyName: !Sub ecs-service-${AWS::StackName}
+          PolicyDocument:
+            {
+              "Version": "2012-10-17",
+              "Statement":
+                [
+                  {
+                    "Effect": "Allow",
+                    "Action":
+                      [
+                        "ec2:AuthorizeSecurityGroupIngress",
+                        "ec2:Describe*",
+                        "elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
+                        "elasticloadbalancing:Describe*",
+                        "elasticloadbalancing:RegisterInstancesWithLoadBalancer",
+                        "elasticloadbalancing:DeregisterTargets",
+                        "elasticloadbalancing:DescribeTargetGroups",
+                        "elasticloadbalancing:DescribeTargetHealth",
+                        "elasticloadbalancing:RegisterTargets"
+                      ],
+                    "Resource": "*"
+                  }
+                ]
+            }
