@@ -17,9 +17,9 @@ Parameters:
     Type: Number
     Default: 1
 
-  GameUrl:
-    Description: The URL of the Game Service
-    Type: String
+  # GameUrl:
+  #   Description: The URL of the Game Service
+  #   Type: String
 
   Listener:
     Description: The Application Load Balancer listener to register with
@@ -44,22 +44,22 @@ Resources:
       DesiredCount: !Ref DesiredCount
       TaskDefinition: !Ref TaskDefinition
       LoadBalancers:
-        - ContainerName: "website-service"
+        - ContainerName: "frontend-service"
           ContainerPort: 3000
           TargetGroupArn: !Ref TargetGroup
 
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
-      Family: website-service
+      Family: frontend-service
       ContainerDefinitions:
-        - Name: website-service
+        - Name: frontend-service
           Essential: true
-          Image: 165718130716.dkr.ecr.eu-north-1.amazonaws.com/numbers_game:latest
+          Image: 165718130716.dkr.ecr.eu-north-1.amazonaws.com/ng-frontend-service:latest
           Memory: 128
-          Environment:
-            - Name: GAME_URL
-              Value: !Ref GameUrl
+          # Environment:
+          #   - Name: GAME_URL
+          #     Value: !Ref GameUrl
           PortMappings:
             - ContainerPort: 3000
           LogConfiguration:

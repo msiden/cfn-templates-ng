@@ -27,18 +27,18 @@ Resources:
       DesiredCount: !Ref DesiredCount
       TaskDefinition: !Ref TaskDefinition
       LoadBalancers:
-        - ContainerName: "product-service"
+        - ContainerName: "game-service"
           ContainerPort: 8080
           TargetGroupArn: !Ref TargetGroup
 
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
-      Family: product-service
+      Family: game-service
       ContainerDefinitions:
-        - Name: product-service
+        - Name: game-service
           Essential: true
-          Image: 165718130716.dkr.ecr.eu-north-1.amazonaws.com/numbers_game_backend:latest
+          Image: 165718130716.dkr.ecr.eu-north-1.amazonaws.com/ng-game-service:latest
           Memory: 128
           PortMappings:
             - ContainerPort: 8080
