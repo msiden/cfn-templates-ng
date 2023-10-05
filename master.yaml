@@ -64,6 +64,16 @@ Resources:
         Path: /
         ECSServiceAutoScalingRoleARN: !GetAtt ECS.Outputs.ECSServiceAutoScalingRole
 
+  ScoreService:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://cfn-template-ng.s3.eu-north-1.amazonaws.com/score-service.yaml
+      Parameters:
+        VPC: !GetAtt VPC.Outputs.VPC
+        Cluster: !GetAtt ECS.Outputs.Cluster
+        DesiredCount: 1
+        Listener: !GetAtt ALB.Outputs.Listener
+
   LifecycleHook:
     Type: AWS::CloudFormation::Stack
     Properties:
