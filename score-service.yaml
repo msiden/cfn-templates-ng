@@ -39,7 +39,7 @@ Resources:
         - Name: score-service
           Essential: true
           Image: 165718130716.dkr.ecr.eu-north-1.amazonaws.com/ng-score-service:latest
-          Memory: 128
+          Memory: 512
           PortMappings:
             - ContainerPort: 8081
           LogConfiguration:
