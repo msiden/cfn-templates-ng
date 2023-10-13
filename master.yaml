@@ -36,7 +36,7 @@ Resources:
       TemplateURL: https://cfn-template-ng.s3.eu-north-1.amazonaws.com/ecs-cluster.yaml
       Parameters:
         EnvironmentName: !Ref AWS::StackName
-        InstanceType: t3.nano
+        InstanceType: t3.small
         ClusterSize: 4
         VPC: !GetAtt VPC.Outputs.VPC
         SecurityGroup: !GetAtt SecurityGroups.Outputs.ECSHostSecurityGroup

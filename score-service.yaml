@@ -39,7 +39,7 @@ Resources:
         - Name: score-service
           Essential: true
           Image: 165718130716.dkr.ecr.eu-north-1.amazonaws.com/ng-score-service:latest
-          Memory: 512
+          Memory: 1024
           PortMappings:
             - ContainerPort: 8081
           LogConfiguration:
@@ -63,7 +63,7 @@ Resources:
       Matcher:
         HttpCode: 200-299
       HealthCheckIntervalSeconds: 10
-      HealthCheckPath: /health_check
+      HealthCheckPath: /scores_service_status
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
